@@ -6,27 +6,16 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 RSS_FEEDS = [
-   # 'https://36kr.com/feed',
-    'https://rsshub.app/guancha/headline',
-    'https://rsshub.app/zaobao/znews/china',
-    'https://rsshub.app/fortunechina',
-   # 'https://www.freedidi.com/feed',
-   # 'https://p3terx.com/feed',
-   # 'https://sspai.com/feed',
-   # 'https://www.digihubs.xyz/feeds/posts/default?alt=rss',
-   # 'https://blog.090227.xyz/atom.xml',
-   # 'https://hunsh.net/atom.xml',
-   # 'http://blog.caixin.com/feed',    
-   # 'http://news.stockstar.com/rss/xml.aspx?file=xml/stock/2.xml',
-   # 'http://cn.reuters.com/rssfeed/cnintlbiznews',
-   # 'https://qks.sufe.edu.cn/J/CJYJ/RSS/CN',
-   # 'https://www.economist.com/sections/china/rss.xml',
-   # 'https://rsshub.app/youtube/playlist/PLRQMDFCUMjJW_R29PyDKbILE2Nj6mC3X3',
-   # 'https://rsshub.app/youtube/playlist/PLvrTMNP6Iw6oTPlmRHvjAWiCeQpwHK6yG',
+    'https://www.youtube.com/@bulianglin/videos',
+    'https://www.youtube.com/@IamJackLiu/videos',
+    'https://www.youtube.com/@TchLiyongle/videos',
+    'https://www.youtube.com/@%E4%B8%AD%E6%8C%87%E9%80%9A/videos',
+    'https://rsshub.app/youtube/playlist/PLRQMDFCUMjJW_R29PyDKbILE2Nj6mC3X3',
+    'https://rsshub.app/youtube/playlist/PLvrTMNP6Iw6oTPlmRHvjAWiCeQpwHK6yG',
     # 添加更多 RSS 源
 ]
 
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_TOKEN']}/sendMessage"
+TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_YOUTUBE']}/sendMessage"
 
 def load_sent_entries():
     try:
