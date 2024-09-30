@@ -29,7 +29,7 @@ jobs:
 
       - name: Run RSS to Telegram script
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_YOUTUBE }}
+          TELEGRAM_BOT_YOUTUBE: ${{ secrets.TELEGRAM_BOT_YOUTUBE }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           python send_rss.py
