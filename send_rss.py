@@ -6,13 +6,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 
 RSS_FEEDS = [
-    'https://www.youtube.com/@bulianglin/videos',
-    'https://www.youtube.com/@IamJackLiu/videos',
-    'https://www.youtube.com/@TchLiyongle/videos',
-    'https://www.youtube.com/@%E4%B8%AD%E6%8C%87%E9%80%9A/videos',
-    'https://rsshub.app/youtube/playlist/PLRQMDFCUMjJW_R29PyDKbILE2Nj6mC3X3',
-    'https://rsshub.app/youtube/playlist/PLvrTMNP6Iw6oTPlmRHvjAWiCeQpwHK6yG',
-    'https://www.youtube.com/channel/UCZDgXi7VpKhBJxsPuZcBpgA',
+    'https://rsshub.app/youtube/playlist/PLvHT0yeWYIuASUZjoW8OXe4e_UkgP7qDU',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCUNciDq-y6I6lEQPeoP-R5A',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCMtXiCoKFrc2ovAGc1eywDg',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCNiJNzSkfumLB7bYtXcIEmg',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCii04BCvYIdQvshrdNDAcww',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCJMEiNh1HvpopPU3n9vJsMQ',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCYjB6uufPeHSwuHs8wovLjg',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCSs4A6HYKmHA2MG_0z-F0xw',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCZDgXi7VpKhBJxsPuZcBpgA',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCSYBgX9pWGiUAcBxjnj6JCQ',  # 郭正亮
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCbCCUH8S3yhlm7__rhxR2QQ',  # 不良人
     # 添加更多 RSS 源
 ]
 
