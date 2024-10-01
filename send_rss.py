@@ -12,6 +12,7 @@ RSS_FEEDS = [
     'https://www.youtube.com/@%E4%B8%AD%E6%8C%87%E9%80%9A/videos',
     'https://rsshub.app/youtube/playlist/PLRQMDFCUMjJW_R29PyDKbILE2Nj6mC3X3',
     'https://rsshub.app/youtube/playlist/PLvrTMNP6Iw6oTPlmRHvjAWiCeQpwHK6yG',
+    'https://www.youtube.com/channel/UCZDgXi7VpKhBJxsPuZcBpgA',
     # 添加更多 RSS 源
 ]
 
