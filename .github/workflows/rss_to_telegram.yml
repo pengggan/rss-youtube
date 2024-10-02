@@ -3,7 +3,7 @@ name: RSS to Telegram
 on:
   workflow_dispatch:
   schedule:
-    - cron: '3 * * * *'  # 每6小时运行一次
+    - cron: '0 */8 * * *'  # 每6小时运行一次
   push:
     branches:
       - main  # 在主分支代码更新时触发
