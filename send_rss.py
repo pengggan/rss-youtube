@@ -15,9 +15,8 @@ RSS_FEEDS = [
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCYjB6uufPeHSwuHs8wovLjg',
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCSs4A6HYKmHA2MG_0z-F0xw',
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCZDgXi7VpKhBJxsPuZcBpgA',
-    'https://www.youtube.com/feeds/videos.xml?channel_id=UCSYBgX9pWGiUAcBxjnj6JCQ',  # 郭正亮
-    'https://www.youtube.com/feeds/videos.xml?channel_id=UCbCCUH8S3yhlm7__rhxR2QQ',  # 不良人
-    # 添加更多 RSS 源
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCSYBgX9pWGiUAcBxjnj6JCQ',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCbCCUH8S3yhlm7__rhxR2QQ',
 ]
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_YOUTUBE']}/sendMessage"
@@ -39,13 +38,16 @@ def send_message(chat_id, text):
         'text': text,
         'parse_mode': 'Markdown'
     }
-    requests.post(TELEGRAM_API_URL, json=payload)
+    try:
+        requests.post(TELEGRAM_API_URL, json=payload)
+    except Exception as e:
+        print(f"Error sending message: {e}")
 
 def fetch_feed(feed):
     try:
-        response = requests.get(feed, timeout=59)  # 增加超时时间
-        response.raise_for_status()  # 检查请求是否成功
-        return parse(response.content)  # 返回解析的内容
+        response = requests.get(feed, timeout=59)
+        response.raise_for_status()
+        return parse(response.content)
     except Exception as e:
         print(f"Error fetching {feed}: {e}")
         return None
@@ -61,14 +63,16 @@ def process_feed(feed, sent_entries, chat_id):
             message = f"*{entry.title}*\n{entry.link}"
             send_message(chat_id, message)
             new_entries.append(entry.link)
-            time.sleep(1)  # 添加延迟以避免 Telegram API 限制
+            time.sleep(2)
     return new_entries
 
 def main():
     sent_entries = load_sent_entries()
     new_entries = []
 
-    with ThreadPoolExecutor() as executor:
+    # 设置线程数量
+    max_workers = 5  # 根据需要调整线程数量
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(process_feed, feed, sent_entries, os.environ['TELEGRAM_CHAT_ID']): feed for feed in RSS_FEEDS}
         for future in as_completed(futures):
             new_entries.extend(future.result() or [])
