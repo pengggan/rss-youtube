@@ -17,6 +17,9 @@ RSS_FEEDS = [
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCZDgXi7VpKhBJxsPuZcBpgA',
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCSYBgX9pWGiUAcBxjnj6JCQ',
     'https://www.youtube.com/feeds/videos.xml?channel_id=UCbCCUH8S3yhlm7__rhxR2QQ',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCXkOTZJ743JgVhJWmNV8F3Q',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCG_gH6S-2ZUOtEw27uIS_QA',
+    'https://www.youtube.com/feeds/videos.xml?channel_id=UCJ5rBA0z4WFGtUTS83sAb_A',
 ]
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_YOUTUBE']}/sendMessage"
@@ -71,7 +74,7 @@ def main():
     new_entries = []
 
     # 设置线程数量
-    max_workers = 5  # 根据需要调整线程数量
+    max_workers = 3  # 根据需要调整线程数量
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(process_feed, feed, sent_entries, os.environ['TELEGRAM_CHAT_ID']): feed for feed in RSS_FEEDS}
         for future in as_completed(futures):
