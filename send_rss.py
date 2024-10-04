@@ -63,19 +63,17 @@ def process_feed(feed, sent_entries, chat_id):
     new_entries = []
     for entry in feed_data.entries:
         if entry.link not in sent_entries:
-        message = f"*{entry.title}*\n{entry.link}"
-        send_message(chat_id, message, delay=2)  # 设置5秒的延迟
-        new_entries.append(entry.link)
-        time.sleep(2)  # 处理每个条目的额外延迟
+            message = f"*{entry.title}*\n{entry.link}"
+            send_message(chat_id, message)
+            new_entries.append(entry.link)
+            time.sleep(3)  # 处理每个条目的额外延迟
     return new_entries
-
 
 def main():
     sent_entries = load_sent_entries()
     new_entries = []
 
-    # 设置线程数量
-    max_workers = 3  # 根据需要调整线程数量
+    max_workers = 5  # 根据需要调整线程数量
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(process_feed, feed, sent_entries, os.environ['TELEGRAM_CHAT_ID']): feed for feed in RSS_FEEDS}
         for future in as_completed(futures):
