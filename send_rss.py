@@ -64,7 +64,7 @@ def process_feed(feed, sent_entries, chat_id):
     for entry in feed_data.entries:
         if entry.link not in sent_entries:
         message = f"*{entry.title}*\n{entry.link}"
-        send_message(chat_id, message, delay=1)  # 设置5秒的延迟
+        send_message(chat_id, message, delay=2)  # 设置5秒的延迟
         new_entries.append(entry.link)
         time.sleep(2)  # 处理每个条目的额外延迟
     return new_entries
