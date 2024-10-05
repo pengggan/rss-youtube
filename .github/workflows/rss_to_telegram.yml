@@ -19,7 +19,10 @@ jobs:
           
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install requests
+          pip install feedparser
+          pip install aiohttp
 
       - name: Run RSS to Telegram script
         env:
