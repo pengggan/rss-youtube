@@ -24,7 +24,18 @@ jobs:
         pip install aiohttp aiomysql feedparser
         pip install python-dotenv
 
-    - name: Run script
+    - name: Run YouTube RSS script
+      env:
+        TELEGRAM_BOT_YOUTUBE: ${{ secrets.TELEGRAM_BOT_YOUTUBE }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ALLOWED_CHAT_IDS: ${{ secrets.ALLOWED_CHAT_IDS }}
+      run: |
+        python youtube_rss.py
+
+    - name: Run RSS script
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         DB_HOST: ${{ secrets.DB_HOST }}
