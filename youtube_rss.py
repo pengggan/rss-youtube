@@ -16,22 +16,22 @@ DB_HOST = os.getenv("DB_HOST")
 DB_NAME = os.getenv("DB_NAME")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-ALLOWED_CHAT_IDS = os.getenv("ALLOWED_CHAT_IDS")。split(",")
+ALLOWED_CHAT_IDS = os.getenv("ALLOWED_CHAT_IDS").split(",")
 
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_YOUTUBE}/sendMessage"
 
 # RSS 源列表
 RSS_FEEDS = [
-    'https://rsshub.app/zaobao/znews/china'， # 联合早报
+    'https://rsshub.app/zaobao/znews/china', # 联合早报
    # 'https://rsshub.app/fortunechina',
-    'https://rsshub.app/bilibili/hot-search'， # bilibili
-    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5c91d2e23882afa09dff4901'， # 36氪 - 24小时热榜
-    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5cac99a7f5648c90ed310e18'， # 微博热搜
-    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5cf92d7f0cc93bc69d082608'， # 百度热搜榜
+    'https://rsshub.app/bilibili/hot-search', # bilibili
+    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5c91d2e23882afa09dff4901', # 36氪 - 24小时热榜
+    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5cac99a7f5648c90ed310e18', # 微博热搜
+    'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5cf92d7f0cc93bc69d082608', # 百度热搜榜
    # 'https://blog.090227.xyz/atom.xml',
-    'https://www.freedidi.com/feed'， # 零度解说
+    'https://www.freedidi.com/feed', # 零度解说
    # 'https://rsshub.app/guancha/headline',
-    'https://rsshub.app/zaobao/znews/china'， # 联合早报
+    'https://rsshub.app/zaobao/znews/china', # 联合早报
    # 'http://blog.caixin.com/feed',
    # 'https://rss.mifaw.com/articles/5c8bb11a3c41f61efd36683e/5ca0144af6f83a0a176acfd6',
     'https://36kr.com/feed',
