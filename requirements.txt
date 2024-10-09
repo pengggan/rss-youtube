@@ -7,3 +7,5 @@ psutil
 aiohttp
 asyncio
 aiomysql
+feedparser
+python-dotenv
