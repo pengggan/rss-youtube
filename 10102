@@ -1,12 +1,12 @@
 import os
-import asyncio  
+import asyncio
 import aiomysql
 import logging
 import datetime
 from feedparser import parse
 from dotenv import load_dotenv
-from telegram import Bot
-from telegram.ext import Application, AIORateLimiter, JobQueue
+from telegram.ext import Application, AIORateLimiter
+import aiohttp
 
 # 加载环境变量
 load_dotenv()
@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # 四组 RSS 源列表
 RSS_FEEDS_GROUP_1 = [
-    'https://rsshub.app/zaobao/znews/china', 
+    'https://rsshub.app/zaobao/znews/china',
     'https://www.freedidi.com/feed'
 ]
 RSS_FEEDS_GROUP_2 = [
@@ -49,13 +49,67 @@ app_3 = Application.builder().token(TELEGRAM_BOT_TOKEN_3).rate_limiter(AIORateLi
 app_4 = Application.builder().token(TELEGRAM_BOT_TOKEN_4).rate_limiter(AIORateLimiter()).build()
 
 # 数据库表
-DB_TABLE_1 = "sent_rss_group_1_2"
-DB_TABLE_2 = "sent_rss_group_3"
-DB_TABLE_3 = "sent_rss_group_4"  # 第四组单独使用
+TABLE_DEFINITIONS = {
+    "sent_rss_group_1_2": """
+        CREATE TABLE IF NOT EXISTS sent_rss_group_1_2 (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            url VARCHAR(255),
+            subject VARCHAR(255),
+            message_id VARCHAR(255),
+            UNIQUE KEY unique_entry (url, subject, message_id)
+        )
+    """,
+    "sent_rss_group_3": """
+        CREATE TABLE IF NOT EXISTS sent_rss_group_3 (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            url VARCHAR(255),
+            subject VARCHAR(255),
+            message_id VARCHAR(255),
+            UNIQUE KEY unique_entry (url, subject, message_id)
+        )
+    """,
+    "sent_rss_group_4": """
+        CREATE TABLE IF NOT EXISTS sent_rss_group_4 (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            url VARCHAR(255),
+            subject VARCHAR(255),
+            message_id VARCHAR(255),
+            UNIQUE KEY unique_entry (url, subject, message_id)
+        )
+    """
+}
 
 # 定义一个并发限制器
 MAX_CONCURRENT_REQUESTS = 5
 semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
+
+# 异步数据库连接池
+async def connect_to_db():
+    try:
+        pool = await aiomysql.create_pool(
+            host=os.getenv("DB_HOST"),
+            db=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            minsize=1,
+            maxsize=10
+        )
+        await create_tables_if_not_exist(pool)
+        return pool
+    except Exception as e:
+        logging.error(f"Error while connecting to MySQL: {e}")
+        return None
+
+async def create_tables_if_not_exist(pool):
+    """检查并创建数据库表（如果不存在）。"""
+    try:
+        async with pool.acquire() as connection:
+            async with connection.cursor() as cursor:
+                for table_name, table_definition in TABLE_DEFINITIONS.items():
+                    await cursor.execute(table_definition)
+                    logging.info(f"Checked and ensured the existence of table {table_name}.")
+    except Exception as e:
+        logging.error(f"Error while checking or creating tables: {e}")
 
 async def fetch_feed(session, feed):
     try:
@@ -74,67 +128,53 @@ async def send_message(bot, chat_id, text):
     except Exception as e:
         logging.error(f"Error sending message to {chat_id}: {e}")
 
-async def process_feed_limited(session, feed, sent_entries, connection, chat_ids, bot, table_name, semaphore):
+async def process_feed_limited(session, feed, sent_entries, pool, chat_ids, bot, table_name, semaphore):
     async with semaphore:
-        await process_feed(session, feed, sent_entries, connection, chat_ids, bot, table_name)
+        await process_feed(session, feed, sent_entries, pool, chat_ids, bot, table_name)
 
-async def process_feed(session, feed, sent_entries, connection, chat_ids, bot, table_name):
+async def process_feed(session, feed, sent_entries, pool, chat_ids, bot, table_name):
     feed_data = await fetch_feed(session, feed)
     if feed_data is None:
         return []
 
     new_entries = []
-    for entry in feed_data.entries:
-        subject = entry.title if entry.title else None
-        url = entry.link if entry.link else None
-        message_id = f"{subject}_{url}" if subject and url else None
+    async with pool.acquire() as connection:
+        async with connection.cursor() as cursor:
+            for entry in feed_data.entries:
+                subject = entry.title if entry.title else None
+                url = entry.link if entry.link else None
+                message_id = f"{subject}_{url}" if subject and url else None
 
-        if (url, subject, message_id) not in sent_entries:
-            message = f"*{entry.title}*\n{entry.link}"
-            for chat_id in chat_ids:
-                await send_message(bot, chat_id, message)
-            new_entries.append((url, subject, message_id))
+                if (url, subject, message_id) not in sent_entries:
+                    message = f"*{entry.title}*\n{entry.link}"
+                    for chat_id in chat_ids:
+                        await send_message(bot, chat_id, message)
+                    new_entries.append((url, subject, message_id))
 
-            current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            await save_sent_entry_to_db(connection, url if url else current_time, subject if subject else current_time, message_id if message_id else current_time, table_name)
-            sent_entries.add((url if url else current_time, subject if subject else current_time, message_id if message_id else current_time))
-            await asyncio.sleep(6)
+                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    await save_sent_entry_to_db(cursor, url if url else current_time, subject if subject else current_time, message_id if message_id else current_time, table_name)
+                    sent_entries.add((url if url else current_time, subject if subject else current_time, message_id if message_id else current_time))
 
     return new_entries
 
-async def connect_to_db():
+async def load_sent_entries_from_db(pool, table_name):
     try:
-        connection = await aiomysql.connect(
-            host=os.getenv("DB_HOST"),
-            db=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD")
-        )
-        return connection
-    except Exception as e:
-        logging.error(f"Error while connecting to MySQL: {e}")
-        return None
-
-async def load_sent_entries_from_db(connection, table_name):
-    try:
-        async with connection.cursor() as cursor:
-            await cursor.execute(f"SELECT url, subject, message_id FROM {table_name}")
-            rows = await cursor.fetchall()
-            return {(row[0], row[1], row[2]) for row in rows}
+        async with pool.acquire() as connection:
+            async with connection.cursor() as cursor:
+                await cursor.execute(f"SELECT url, subject, message_id FROM {table_name}")
+                rows = await cursor.fetchall()
+                return {(row[0], row[1], row[2]) for row in rows}
     except Exception as e:
         logging.error(f"Error fetching sent entries from {table_name}: {e}")
         return set()
 
-async def save_sent_entry_to_db(connection, url, subject, message_id, table_name):
+async def save_sent_entry_to_db(cursor, url, subject, message_id, table_name):
     try:
-        async with connection.cursor() as cursor:
-            await cursor.execute(
-                f"INSERT IGNORE INTO {table_name} (url, subject, message_id) VALUES (%s, %s, %s)", 
-                (url, subject, message_id)
-            )
-            await connection.commit()
-            logging.info(f"Saved sent entry: {url}, {subject}, {message_id} to {table_name}")
+        await cursor.execute(
+            f"INSERT IGNORE INTO {table_name} (url, subject, message_id) VALUES (%s, %s, %s)",
+            (url, subject, message_id)
+        )
+        logging.info(f"Saved sent entry: {url}, {subject}, {message_id} to {table_name}")
     except Exception as e:
         logging.error(f"Error saving sent entry to {table_name}: {e}")
 
@@ -142,31 +182,31 @@ async def save_sent_entry_to_db(connection, url, subject, message_id, table_name
 async def schedule_feeds(app, feeds, interval):
     job_queue = app.job_queue
     for feed in feeds:
-        job_queue.run_repeating(lambda context: process_feed_limited(context.session, feed, context.sent_entries, context.connection, context.chat_ids, context.bot, context.table_name, semaphore), interval=interval, first=0)
+        job_queue.run_repeating(lambda context: process_feed_limited(context.session, feed, context.sent_entries, context.pool, context.chat_ids, context.bot, context.table_name, semaphore), interval=interval, first=0)
 
 async def main():
-    connection = await connect_to_db()
-    if connection is None:
+    pool = await connect_to_db()
+    if pool is None:
         logging.error("Failed to connect to the database. Exiting.")
         return
 
     async with aiohttp.ClientSession() as session:
         # 第一组和第二组共享一个数据库表
-        sent_entries_1 = await load_sent_entries_from_db(connection, DB_TABLE_1)
-        tasks_1 = [process_feed_limited(session, feed, sent_entries_1, connection, ALLOWED_CHAT_IDS_1, app_1.bot, DB_TABLE_1, semaphore) for feed in RSS_FEEDS_GROUP_1]
-        tasks_2 = [process_feed_limited(session, feed, sent_entries_1, connection, ALLOWED_CHAT_IDS_2, app_2.bot, DB_TABLE_1, semaphore) for feed in RSS_FEEDS_GROUP_2]
+        sent_entries_1 = await load_sent_entries_from_db(pool, "sent_rss_group_1_2")
+        tasks_1 = [process_feed_limited(session, feed, sent_entries_1, pool, ALLOWED_CHAT_IDS_1, app_1.bot, "sent_rss_group_1_2", semaphore) for feed in RSS_FEEDS_GROUP_1]
+        tasks_2 = [process_feed_limited(session, feed, sent_entries_1, pool, ALLOWED_CHAT_IDS_2, app_2.bot, "sent_rss_group_1_2", semaphore) for feed in RSS_FEEDS_GROUP_2]
 
         # 第三组使用单独的数据库表
-        sent_entries_2 = await load_sent_entries_from_db(connection, DB_TABLE_2)
-        tasks_3 = [process_feed_limited(session, feed, sent_entries_2, connection, ALLOWED_CHAT_IDS_3, app_3.bot, DB_TABLE_2, semaphore) for feed in RSS_FEEDS_GROUP_3]
+        sent_entries_2 = await load_sent_entries_from_db(pool, "sent_rss_group_3")
+        tasks_3 = [process_feed_limited(session, feed, sent_entries_2, pool, ALLOWED_CHAT_IDS_3, app_3.bot, "sent_rss_group_3", semaphore) for feed in RSS_FEEDS_GROUP_3]
 
         # 第四组使用单独的数据库表，合并推送
-        sent_entries_3 = await load_sent_entries_from_db(connection, DB_TABLE_3)
-        tasks_4 = [process_feed_limited(session, feed, sent_entries_3, connection, ALLOWED_CHAT_IDS_4, app_4.bot, DB_TABLE_3, semaphore) for feed in RSS_FEEDS_GROUP_4]
+        sent_entries_3 = await load_sent_entries_from_db(pool, "sent_rss_group_4")
+        tasks_4 = [process_feed_limited(session, feed, sent_entries_3, pool, ALLOWED_CHAT_IDS_4, app_4.bot, "sent_rss_group_4", semaphore) for feed in RSS_FEEDS_GROUP_4]
 
         await asyncio.gather(*tasks_1, *tasks_2, *tasks_3, *tasks_4)
 
-    connection.close()
+    pool.close()
 
 if __name__ == "__main__":
     asyncio.run(main())
